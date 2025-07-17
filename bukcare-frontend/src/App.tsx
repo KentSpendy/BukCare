@@ -12,8 +12,8 @@ import StaffLayout from './layouts/StaffLayout'
 import DoctorDashboard from './pages/doctor/Dashboard'
 import DoctorAppointments from './pages/doctor/Appointments'
 import DoctorAvailability from './pages/doctor/Availability'
-import DoctorQueue from './pages/doctor/Queue'
 import DoctorProfile from './pages/doctor/DoctorProfile'
+import DoctorQueue from './pages/doctor/DoctorQueue'
 
 // Patient
 import PatientDashboard from './pages/patient/Dashboard'
@@ -32,6 +32,7 @@ import PatientSummaries from './pages/doctor/PatientSummaries'
 import EditProfile from './pages/doctor/EditProfile'
 import AppointmentHistory from './pages/doctor/AppointmentHistory'
 import DoctorNotifications from './pages/doctor/DoctorNotifications'
+import SearchDoctors from './pages/doctor/SearchDoctors'
 
 function App() {
   const { role, loading } = useAuth()
@@ -53,17 +54,20 @@ function App() {
         }
       >
         <Route index element={<DoctorDashboard />} />
-        <Route path="availability" element={<DoctorAvailability />} />
         <Route path="appointments" element={<DoctorAppointments />} />
         <Route path="appointments/:id" element={<AppointmentDetail />} />
-        <Route path="queue" element={<DoctorQueue />} />
-        <Route path="patient-summaries" element={<PatientSummaries />} />
-        <Route path="profile/:id" element={<DoctorProfile />} />
+        <Route path="availability" element={<DoctorAvailability />} />
         <Route path="edit-profile" element={<EditProfile />} />
         <Route path="history" element={<AppointmentHistory />} />
         <Route path="notifications" element={<DoctorNotifications />} />
-      </Route>
+        <Route path="patient-summaries" element={<PatientSummaries />} />
+        <Route path="profile/:id" element={<DoctorProfile />} />
+        <Route path="queue" element={<DoctorQueue />} />
+        <Route path="search-doctors" element={<SearchDoctors />} />
 
+      </Route>
+        
+      <Route path="/search-doctors" element={<SearchDoctors />} />
 
       {/* Patient Routes */}
       <Route

@@ -35,8 +35,11 @@ class User(AbstractBaseUser, PermissionsMixin):
     specialization = models.CharField(max_length=100, blank=True, null=True)
     specialization_verified = models.BooleanField(default=False)
 
-    # ✅ Changed to store plain Cloudinary image URL
+    # ✅ Store Cloudinary URL
     profile_photo = models.URLField(blank=True, null=True)
+
+    # ✅ NEW: "Available on Call" status
+    is_available_on_call = models.BooleanField(default=False)
 
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
@@ -49,6 +52,7 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return f"{self.email} ({self.role})"
+
 
 class PatientProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
@@ -69,13 +73,28 @@ class StaffProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
 
 class Availability(models.Model):
+    REPEAT_CHOICES = [
+        ('none', 'None'),
+        ('weekly', 'Weekly'),
+        ('biweekly', 'Biweekly'),
+    ]
+
     doctor = models.ForeignKey(User, on_delete=models.CASCADE, limit_choices_to={'role': 'doctor'})
     date = models.DateField()
     start_time = models.TimeField()
     end_time = models.TimeField()
 
+    # New fields for repeat functionality
+    repeat = models.CharField(
+        max_length=10,
+        choices=REPEAT_CHOICES,
+        default='none'
+    )
+    repeat_until = models.DateField(blank=True, null=True)
+
     def __str__(self):
         return f"{self.doctor.email} | {self.date} | {self.start_time}-{self.end_time}"
+
 
 class Appointment(models.Model):
     STATUS_CHOICES = [
@@ -104,14 +123,16 @@ class Appointment(models.Model):
     def __str__(self):
         return f"{self.patient.email} → {self.doctor.email} | {self.status}"
 
+# models.py
 class Notification(models.Model):
-    doctor = models.ForeignKey(User, on_delete=models.CASCADE, limit_choices_to={'role': 'doctor'})
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
     message = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
     is_read = models.BooleanField(default=False)
 
     def __str__(self):
-        return f"To {self.doctor.email} - {self.message[:30]}"
+        return f"{self.user.email}: {self.message[:30]}"
+
 
 class RescheduleRecord(models.Model):
     appointment = models.ForeignKey('Appointment', on_delete=models.CASCADE, related_name='reschedules')

@@ -3,94 +3,93 @@ import api from '../../services/api'
 
 interface Appointment {
   id: number
-  patient_email: string
   status: string
-  triage_status: string | null
-  reason: string | null
-  availability: {
-    date: string
-    start_time: string
-    end_time: string
-  }
+  triage_status?: string
+  reason: string
+  created_at: string
+  availability_date: string
+  availability_start_time: string
+  availability_end_time: string
 }
 
 export default function AppointmentHistory() {
   const [appointments, setAppointments] = useState<Appointment[]>([])
-  const [loading, setLoading] = useState(true)
+  const [activeTab, setActiveTab] = useState('approved')
 
-  const fetchHistory = async () => {
-    try {
-      const res = await api.get('/appointments/')
-      const filtered = res.data.filter((appt: Appointment) =>
-        ['cancelled', 'declined'].includes(appt.status) ||
-        ['done', 'no_show'].includes(appt.triage_status || '')
-      )
-      setAppointments(filtered)
-    } catch (err) {
-      console.error('Failed to fetch history', err)
-    } finally {
-      setLoading(false)
+  useEffect(() => {
+    const fetchHistory = async () => {
+      try {
+        const res = await api.get('/appointments/history/')
+        setAppointments(res.data)
+      } catch (err) {
+        console.error('Failed to fetch appointment history', err)
+      }
     }
-  }
 
-  const exportCSV = async () => {
+    fetchHistory()
+  }, [])
+
+  const filtered = appointments.filter((appt) => appt.status === activeTab)
+
+  const downloadCSV = async () => {
     try {
-      const res = await api.get('/doctor/export-appointments/', {
+      const res = await api.get('/appointments/export/', {
         responseType: 'blob',
       })
+
       const url = window.URL.createObjectURL(new Blob([res.data]))
       const link = document.createElement('a')
       link.href = url
-      link.setAttribute('download', 'appointment_history.csv')
+      link.setAttribute('download', 'appointments.csv')
       document.body.appendChild(link)
       link.click()
       link.remove()
     } catch (err) {
-      console.error('Export failed', err)
-      alert('Failed to export CSV.')
+      console.error('Failed to export appointments', err)
     }
   }
-
-  const formatTime = (time: string) => {
-    const [hour, min] = time.split(':')
-    return `${hour}:${min}`
-  }
-
-  useEffect(() => {
-    fetchHistory()
-  }, [])
 
   return (
     <div>
       <h1 className="text-2xl font-bold mb-4">Appointment History</h1>
 
       <button
-        onClick={exportCSV}
-        className="bg-green-600 text-white px-4 py-2 rounded mb-6"
+        onClick={downloadCSV}
+        className="bg-green-600 text-white px-4 py-2 rounded mb-4 hover:bg-green-700"
       >
-        Export CSV
+        Export as CSV
       </button>
 
-      {loading ? (
-        <p>Loading history...</p>
-      ) : appointments.length === 0 ? (
-        <p>No historical appointments.</p>
+      <div className="flex gap-4 mb-4">
+        {['approved', 'cancelled', 'declined'].map((tab) => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            className={`px-4 py-1 rounded ${
+              activeTab === tab
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-200 text-gray-700'
+            }`}
+          >
+            {tab.charAt(0).toUpperCase() + tab.slice(1)}
+          </button>
+        ))}
+      </div>
+
+      {filtered.length === 0 ? (
+        <p>No {activeTab} appointments found.</p>
       ) : (
-        <div className="space-y-4">
-          {appointments.map((appt) => (
-            <div key={appt.id} className="bg-white p-4 shadow rounded">
-              <p><strong>Patient:</strong> {appt.patient_email || 'N/A'}</p>
-              <p><strong>Date:</strong> {appt.availability.date}</p>
-              <p>
-                <strong>Time:</strong>{' '}
-                {formatTime(appt.availability.start_time)} – {formatTime(appt.availability.end_time)}
-              </p>
-              <p><strong>Reason:</strong> {appt.reason || 'N/A'}</p>
+        <ul className="space-y-3">
+          {filtered.map((appt) => (
+            <li key={appt.id} className="bg-white p-4 rounded shadow">
+              <p><strong>Date:</strong> {appt.availability_date}</p>
+              <p><strong>Time:</strong> {appt.availability_start_time} – {appt.availability_end_time}</p>
               <p><strong>Status:</strong> {appt.status}</p>
+              <p><strong>Reason:</strong> {appt.reason || 'N/A'}</p>
               <p><strong>Triage:</strong> {appt.triage_status || 'N/A'}</p>
-            </div>
+            </li>
           ))}
-        </div>
+        </ul>
       )}
     </div>
   )

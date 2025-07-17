@@ -15,7 +15,7 @@ interface Appointment {
   }
 }
 
-export default function DoctorQueue() {
+export default function FakeQueue() {
   const [appointments, setAppointments] = useState<Appointment[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -55,7 +55,7 @@ export default function DoctorQueue() {
       {loading ? (
         <p>Loading...</p>
       ) : appointments.length === 0 ? (
-        <p>No patients in queue.</p>
+        <p>No patients in queue otin.</p>
       ) : (
         <div className="space-y-4">
           {appointments.map((appt, idx) => (
