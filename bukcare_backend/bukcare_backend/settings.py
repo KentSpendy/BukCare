@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'api',
     'cloudinary',
     'cloudinary_storage',
+    'channels',
 ]
 
 MIDDLEWARE = [
@@ -149,4 +150,23 @@ CLOUDINARY_STORAGE = {
     'CLOUD_NAME': 'doe1ucrfm',
     'API_KEY': '564599727697837',
     'API_SECRET': 'CZPV8vdUJmKKe05llKKOXXRcVrc',
+}
+
+ASGI_APPLICATION = "bukcare_backend.asgi.application"
+
+# gamiton ranig na install na ang redis
+# CHANNEL_LAYERS = {
+#     "default": {
+#         "BACKEND": "channels_redis.core.RedisChannelLayer",
+#         "CONFIG": {
+#             "hosts": [("127.0.0.1", 6379)],
+#         },
+#     },
+# }
+
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels.layers.InMemoryChannelLayer",
+    },
 }

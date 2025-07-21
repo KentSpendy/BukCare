@@ -2,6 +2,7 @@ import { Link, Outlet, useLocation } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import api from '../services/api'
 import logout from '../utils/logout'
+import { connectDoctorNotifications } from '../services/doctorNotificationsSocket'
 
 interface UserInfo {
   id: number
@@ -12,7 +13,9 @@ interface UserInfo {
 export default function DoctorLayout() {
   const [user, setUser] = useState<UserInfo | null>(null)
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+  const [unreadCount, setUnreadCount] = useState(0)
   const location = useLocation()
+
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -27,6 +30,35 @@ export default function DoctorLayout() {
     fetchUser()
   }, [])
 
+  // useEffect(() => {
+  //   if (!user) return
+
+  //   const socket = connectDoctorNotifications((data) => {
+  //     alert(`🔔 ${data.message}`)
+  //     setUnreadCount((prev) => prev + 1)
+  //   })
+
+  //   return () => socket.close()
+  // }, [user])
+
+
+  //dili mo dawat ug duplicate nga notification
+  useEffect(() => {
+    if (!user) return
+
+    const socket = connectDoctorNotifications((data) => {
+      if (data?.message) {
+        setUnreadCount((prev) => prev + 1)
+        alert(`🔔 ${data.message}`)
+      }
+    })
+
+    return () => socket.close()
+  }, [user])
+
+
+
+
   const navigationItems = [
     { to: '', label: 'Dashboard', icon: '🏠' },
     { to: 'appointments', label: 'Appointments', icon: '📅' },
@@ -35,7 +67,11 @@ export default function DoctorLayout() {
     { to: '/doctor/patient-summaries', label: 'Patient Summaries', icon: '📋' },
     { to: '/doctor/edit-profile', label: 'Edit Profile', icon: '✏️' },
     { to: '/doctor/history', label: 'Appointment History', icon: '📜' },
-    { to: '/doctor/notifications', label: 'Notifications', icon: '🔔' },
+    {
+      to: '/doctor/notifications',
+      label: 'Notifications' + (unreadCount > 0 ? ` (${unreadCount})` : ''),
+      icon: '🔔',
+    },
     { to: '/search-doctors', label: 'Find Doctors', icon: '🔍' },
   ]
 
@@ -46,7 +82,6 @@ export default function DoctorLayout() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
-      {/* Mobile Sidebar Overlay */}
       {isSidebarOpen && (
         <div 
           className="fixed inset-0 bg-black bg-opacity-50 z-20 lg:hidden"
@@ -54,13 +89,11 @@ export default function DoctorLayout() {
         />
       )}
 
-      {/* Sidebar */}
       <div className={`
         fixed lg:static inset-y-0 left-0 z-30 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out
         ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
         flex flex-col
       `}>
-        {/* Header */}
         <div className="p-6 border-b border-gray-200">
           <div className="flex items-center justify-between">
             <h1 className="text-xl font-bold text-gray-800">
@@ -81,7 +114,6 @@ export default function DoctorLayout() {
           )}
         </div>
 
-        {/* Navigation */}
         <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
           {navigationItems.map((item) => (
             <Link
@@ -100,7 +132,7 @@ export default function DoctorLayout() {
               {item.label}
             </Link>
           ))}
-          
+
           {user && (
             <Link
               to={`/doctor/profile/${user.id}`}
@@ -119,7 +151,6 @@ export default function DoctorLayout() {
           )}
         </nav>
 
-        {/* Logout Button */}
         <div className="p-4 border-t border-gray-200">
           <button
             onClick={logout}
@@ -131,9 +162,7 @@ export default function DoctorLayout() {
         </div>
       </div>
 
-      {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0">
-        {/* Mobile Header */}
         <div className="lg:hidden bg-white shadow-sm border-b border-gray-200 p-4">
           <div className="flex items-center justify-between">
             <button
@@ -145,11 +174,10 @@ export default function DoctorLayout() {
               </svg>
             </button>
             <h1 className="text-lg font-semibold text-gray-800">Doctor Dashboard</h1>
-            <div className="w-10" /> {/* Spacer for balance */}
+            <div className="w-10" />
           </div>
         </div>
 
-        {/* Content Area */}
         <main className="flex-1 p-6 overflow-auto">
           <div className="max-w-7xl mx-auto">
             <Outlet />
