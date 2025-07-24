@@ -32,31 +32,39 @@ class AvailabilitySerializer(serializers.ModelSerializer):
         read_only_fields = ['doctor']
 
 
+class DoctorSummarySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'first_name', 'last_name']
+
+
+
 class AppointmentSerializer(serializers.ModelSerializer):
-    # Used during creation
     availability_id = serializers.PrimaryKeyRelatedField(
         source='availability',
         queryset=Availability.objects.all(),
         write_only=True
     )
 
-    # Used during read
     availability_date = serializers.SerializerMethodField()
     availability_start_time = serializers.SerializerMethodField()
     availability_end_time = serializers.SerializerMethodField()
     patient_name = serializers.SerializerMethodField()
     doctor_name = serializers.SerializerMethodField()
 
+    doctor = DoctorSummarySerializer(read_only=True)
+
     class Meta:
         model = Appointment
         fields = [
             'id', 'status', 'triage_status', 'reason', 'created_at',
-            'availability_id',  # for POST
+            'availability_id',
             'availability_date', 'availability_start_time', 'availability_end_time',
-            'patient', 'doctor',
+            'patient',
+            'doctor',  # now returns first_name, last_name, id
             'patient_name', 'doctor_name',
         ]
-        read_only_fields = ['created_at', 'patient', 'doctor']
+        read_only_fields = ['created_at', 'patient']
 
     def get_availability_date(self, obj):
         return obj.availability.date if obj.availability else None
@@ -78,6 +86,7 @@ class AppointmentSerializer(serializers.ModelSerializer):
             full_name = f"{obj.doctor.first_name} {obj.doctor.last_name}".strip()
             return f"Dr. {full_name}" if full_name else f"Dr. {obj.doctor.email}"
         return "Unknown"
+
 
 
 class RescheduleRecordSerializer(serializers.ModelSerializer):

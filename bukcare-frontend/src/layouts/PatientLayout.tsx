@@ -9,6 +9,8 @@ export default function PatientLayout() {
         <Link to="/patient">Home</Link>
         <Link to="/patient/book">Book Appointment</Link>
         <Link to="/patient/appointments">My Appointments</Link>
+        <Link to="/patient/history">Appointment History</Link>
+        <Link to="/patient/notifications">Notifications</Link>
         <button
           onClick={logout}
           className="ml-auto text-red-600 hover:underline"

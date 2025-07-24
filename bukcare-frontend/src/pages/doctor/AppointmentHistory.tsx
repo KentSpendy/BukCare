@@ -279,7 +279,7 @@ export default function AppointmentHistory() {
                 >
                   {getTabIcon(tab)}
                   <span className="ml-2">{tab.charAt(0).toUpperCase() + tab.slice(1)}</span>
-                  <span className="ml-2 bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full text-xs">
+                  <span className="ml-2 bg-blue-200 text-gray-600 px-2 py-0.5 rounded-full text-xs">
                     {getAppointmentCount(tab)}
                   </span>
                 </button>
@@ -302,7 +302,7 @@ export default function AppointmentHistory() {
             ) : (
               <div className="space-y-4">
                 {filtered.map((appt) => (
-                  <div key={appt.id} className="bg-gray-50 rounded-lg p-6 hover:bg-gray-100 transition-colors duration-150">
+                  <div key={appt.id} className="bg-gray-50 rounded-lg p-6 hover:bg-blue-100 transition-colors duration-150">
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex items-center">
                         <div className="p-2 bg-white rounded-lg shadow-sm mr-4">

@@ -15,6 +15,8 @@ interface Appointment {
   availability_date: string
   availability_start_time: string
   availability_end_time: string
+  profile_photo?: string
+  triage_status: string
 }
 
 export default function DoctorAppointments() {
@@ -137,7 +139,26 @@ export default function DoctorAppointments() {
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                          <User className="w-5 h-5 text-blue-600" />
+                          {appt.profile_photo ? (
+                            <img
+                              src={appt.profile_photo}
+                              alt={`${appt.patient_name || 'Patient'} profile`}
+                              className="w-10 h-10 rounded-lg object-cover"
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                target.onerror = null;
+                                target.style.display = 'none';
+                                const parent = target.parentElement;
+                                if (parent) {
+                                  const fallbackIcon = document.createElement('span');
+                                  fallbackIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.121 17.804A13.937 13.937 0 0112 15c2.5 0 4.847.655 6.879 1.804M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>`;
+                                  parent.appendChild(fallbackIcon);
+                                }
+                              }}
+                            />
+                          ) : (
+                            <User className="w-6 h-6 text-blue-400" />
+                          )}
                         </div>
                         <div>
                           <h3 className="font-semibold text-gray-900 text-lg">
@@ -181,12 +202,21 @@ export default function DoctorAppointments() {
                           <p className="font-medium text-gray-900">{appt.reason || 'N/A'}</p>
                         </div>
                       </div>
+
+                      <div className="flex items-start gap-3">
+                        <FileText className="w-5 h-5 text-gray-400 mt-0.5" />
+                        <div>
+                          <p className="text-sm text-gray-500">Triage Status</p>
+                          <p className="font-medium text-gray-900">{appt.triage_status || 'N/A'}</p>
+                        </div>
+                      </div>
+
                     </div>
 
                     <div className="flex gap-3 flex-wrap">
                       <Link
                         to={`/doctor/appointments/${appt.id}`}
-                        className="inline-flex items-center gap-2 bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+                        className="inline-flex items-center gap-2 bg-blue-800 text-white px-4 py-2 rounded-lg hover:bg-blue-500 transition-colors font-medium"
                       >
                         <Eye className="w-4 h-4" />
                         View Details

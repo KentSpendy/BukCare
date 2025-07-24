@@ -23,6 +23,9 @@ from .views import (
     ToggleAvailableOnCallView,
     CustomTokenObtainPairView,
     doctor_logout,
+    PatientNotificationListView,
+    MarkNotificationReadView,
+    DeleteNotificationView,
 )
 
 router = DefaultRouter()
@@ -58,6 +61,12 @@ urlpatterns = [
     # Doctor tools
     path('doctor/patient-summaries/', doctor_patient_summaries, name='doctor-patient-summaries'),
     path('doctor/export-appointments/', export_doctor_appointments, name='export-doctor-appointments'),
+
+
+    #Patient Module
+    path('notifications/', PatientNotificationListView.as_view(), name='patient-notifications'),
+    path('notifications/<int:pk>/mark_read/', MarkNotificationReadView.as_view(), name='mark-notification-read'),
+    path('notifications/<int:pk>/', DeleteNotificationView.as_view(), name='delete-notification'),
 
     # Routers
     path('', include(router.urls)),

@@ -20,6 +20,8 @@ import PatientDashboard from './pages/patient/Dashboard'
 import DoctorList from './pages/patient/DoctorList'
 import BookSpecificDoctor from './pages/patient/BookSpecificDoctor'
 import MyAppointments from './pages/patient/MyAppointments'
+import ViewDoctorProfile from './pages/patient/ViewDoctorProfile'
+import AppointmentHistoryPatient from './pages/patient/AppointmentHistoryPatient'
 
 // Staff
 import StaffDashboard from './pages/staff/Dashboard'
@@ -33,6 +35,7 @@ import EditProfile from './pages/doctor/EditProfile'
 import AppointmentHistory from './pages/doctor/AppointmentHistory'
 import DoctorNotifications from './pages/doctor/DoctorNotifications'
 import SearchDoctors from './pages/doctor/SearchDoctors'
+import PatientNotification from './pages/patient/PatientNotification'
 
 function App() {
   const { role, loading } = useAuth()
@@ -82,6 +85,9 @@ function App() {
         <Route path="book" element={<DoctorList />} />
         <Route path="book/:id" element={<BookSpecificDoctor />} />
         <Route path="appointments" element={<MyAppointments />} />
+        <Route path="/patient/doctor/:id" element={<ViewDoctorProfile />} />
+        <Route path="history" element={<AppointmentHistoryPatient />} />
+        <Route path="notifications" element={<PatientNotification />} />
       </Route>
 
       {/* Staff Routes */}

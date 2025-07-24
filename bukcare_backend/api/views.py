@@ -3,6 +3,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework import status as drf_status
 from .models import Notification
 from .serializers import AppointmentDetailSerializer, NotificationSerializer
 from rest_framework.decorators import action
@@ -195,15 +196,79 @@ class AppointmentViewSet(viewsets.ModelViewSet):
             return Appointment.objects.all()
         return Appointment.objects.none()
 
+    from .models import Notification
+
     def partial_update(self, request, *args, **kwargs):
         instance = self.get_object()
         user = request.user
 
-        # Allow update if staff OR the doctor who owns the appointment
+        print(f'👤 Request by: {user.email} (role={user.role})')
+        print(f'📋 Appointment {instance.id}: patient={instance.patient.id}, doctor={instance.doctor.id}')
+
+        status_value = request.data.get('status')
+        availability_id = request.data.get('availability_id')
+        updated = False
+
+        # ✅ Patient logic
+        if user.role == 'patient' and instance.patient_id == user.id:
+            if status_value not in ['cancelled', 'rescheduled']:
+                return Response({'detail': 'Invalid status'}, status=400)
+
+            instance.status = status_value
+            updated = True
+
+            if availability_id:
+                from .models import Availability
+                try:
+                    new_availability = Availability.objects.get(id=availability_id)
+                    instance.availability = new_availability
+                    updated = True
+                except Availability.DoesNotExist:
+                    return Response({'detail': 'Invalid availability ID'}, status=400)
+
+            if updated:
+                instance.save()
+                return Response({'message': 'Appointment updated by patient'})
+
+        # ✅ Doctor updates triage_status only
+        if user.role == 'doctor' and 'triage_status' in request.data:
+            instance.triage_status = request.data['triage_status']
+            instance.save()
+            return Response(self.get_serializer(instance).data)
+
+        # ✅ Staff or Doctor updates status
         if user.role == 'staff' or (user.role == 'doctor' and instance.doctor == user):
+            if status_value and status_value != instance.status:
+                instance.status = status_value
+                instance.save()
+
+                # ✅ Notify patient
+                if status_value == 'approved':
+                    Notification.objects.create(
+                        user=instance.patient,
+                        message=f"Your appointment with Dr. {instance.doctor.first_name} {instance.doctor.last_name} has been approved.",
+                        type='appointment'
+                    )
+                elif status_value == 'declined':
+                    Notification.objects.create(
+                        user=instance.patient,
+                        message=f"Your appointment with Dr. {instance.doctor.first_name} {instance.doctor.last_name} has been declined.",
+                        type='appointment'
+                    )
+
+                return Response(self.get_serializer(instance).data)
+
+            # ✅ Fallback to default DRF update for other fields
             return super().partial_update(request, *args, **kwargs)
 
+        # 🚫 If none of the above match
+        print('🚫 Forbidden request')
         return Response({'detail': 'Forbidden'}, status=403)
+
+
+
+
+
 
 
     def update(self, request, *args, **kwargs):
@@ -272,21 +337,7 @@ class AppointmentViewSet(viewsets.ModelViewSet):
         return response
     
 
-    def partial_update(self, request, *args, **kwargs):
-        instance = self.get_object()
-        user = request.user
-
-        # Doctor can update triage_status
-        if user.role == 'doctor' and 'triage_status' in request.data:
-            instance.triage_status = request.data['triage_status']
-            instance.save()
-            return Response(self.get_serializer(instance).data)
-
-        # Allow staff or doctor to update normal stuff
-        if user.role == 'staff' or (user.role == 'doctor' and instance.doctor == user):
-            return super().partial_update(request, *args, **kwargs)
-
-        return Response({'detail': 'Forbidden'}, status=403)
+    # (Remove this duplicate method entirely; logic is now merged above)
     
     @action(detail=True, methods=['get'])
     def detail(self, request, pk=None):
@@ -484,3 +535,45 @@ def doctor_logout(request):
         user.is_available_on_call = False
         user.save(update_fields=['is_available_on_call'])
     return Response({'detail': 'Logged out and marked offline.'})
+
+
+class PatientNotificationListView(ListAPIView): 
+    serializer_class = NotificationSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return Notification.objects.filter(user=self.request.user).order_by('-created_at')
+    
+
+
+class NotificationDetailView(generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = NotificationSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return Notification.objects.filter(recipient=self.request.user)
+    
+
+class MarkNotificationReadView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def patch(self, request, pk):
+        try:
+            notif = Notification.objects.get(pk=pk, user=request.user)
+            notif.is_read = True
+            notif.save()
+            return Response({'message': 'Marked as read'})
+        except Notification.DoesNotExist:
+            return Response({'detail': 'Not found'}, status=404)
+
+
+class DeleteNotificationView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def delete(self, request, pk):
+        try:
+            notif = Notification.objects.get(pk=pk, user=request.user)
+            notif.delete()
+            return Response({'message': 'Deleted successfully'})
+        except Notification.DoesNotExist:
+            return Response({'detail': 'Not found'}, status=404)
