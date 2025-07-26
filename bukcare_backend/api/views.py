@@ -198,12 +198,13 @@ class AppointmentViewSet(viewsets.ModelViewSet):
 
     from .models import Notification
 
+
     def partial_update(self, request, *args, **kwargs):
         instance = self.get_object()
         user = request.user
 
         print(f'👤 Request by: {user.email} (role={user.role})')
-        print(f'📋 Appointment {instance.id}: patient={instance.patient.id}, doctor={instance.doctor.id}')
+        print(f'📋 Appointment {instance.id}: patient={instance.patient.id}, doctor={getattr(instance.doctor, "id", None)}')
 
         status_value = request.data.get('status')
         availability_id = request.data.get('availability_id')
@@ -242,18 +243,22 @@ class AppointmentViewSet(viewsets.ModelViewSet):
                 instance.status = status_value
                 instance.save()
 
-                # ✅ Notify patient
+                doctor_name = (
+                    f"Dr. {instance.doctor.first_name} {instance.doctor.last_name}"
+                    if instance.doctor else "your doctor"
+                )
+
                 if status_value == 'approved':
                     Notification.objects.create(
                         user=instance.patient,
-                        message=f"Your appointment with Dr. {instance.doctor.first_name} {instance.doctor.last_name} has been approved.",
-                        type='appointment'
+                        message=f"Your appointment with {doctor_name} has been approved.",
+                        notification_type='appointment',
                     )
                 elif status_value == 'declined':
                     Notification.objects.create(
                         user=instance.patient,
-                        message=f"Your appointment with Dr. {instance.doctor.first_name} {instance.doctor.last_name} has been declined.",
-                        type='appointment'
+                        message=f"Your appointment with {doctor_name} has been declined.",
+                        notification_type='appointment'
                     )
 
                 return Response(self.get_serializer(instance).data)
@@ -261,9 +266,9 @@ class AppointmentViewSet(viewsets.ModelViewSet):
             # ✅ Fallback to default DRF update for other fields
             return super().partial_update(request, *args, **kwargs)
 
-        # 🚫 If none of the above match
         print('🚫 Forbidden request')
         return Response({'detail': 'Forbidden'}, status=403)
+
 
 
 
